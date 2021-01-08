@@ -9,12 +9,11 @@
         Cong Uy, cong-uy.nguyen@utc.fr
         Kumar Paras, paras.kumar@fau.de
     ---------------------------------------------------------
-    ONGOING TASK: question 3.2 (Hao)
+    ONGOING TASK: question 3.2
 
     TODO LIST:
       - 3.1: done !
-      - 3.2:  
-      - 4 : ?
+      - 3.2: done !
 '''
 # external imports
 import time
@@ -22,6 +21,8 @@ import numpy as np
 from pathlib import Path
 # internal imports
 from publics_hao import *
+
+
 
 #!------------------------------------------------------------------------------
 #!                                 GLOBAL VARIABLES
@@ -31,17 +32,10 @@ STEPS = int((1.245 - 0) / TIME_STEP)
 INPUT_DATA = read_file("input.data")
 REF_DATA = read_file("result.data")
 
-#!------------------------------------------------------------------------------
-#!                                     CLASSES
-#!------------------------------------------------------------------------------
+
 
 #!------------------------------------------------------------------------------
 #!                                    FUNCTIONS
-#!------------------------------------------------------------------------------
-
-
-#!------------------------------------------------------------------------------
-#!                                     TESTING
 #!------------------------------------------------------------------------------
 def question3_1():
     pop_all = Population(INPUT_DATA[:, :2], INPUT_DATA[:, 2],
@@ -60,7 +54,7 @@ def question3_1():
         #! Uncomment the following 2 lines if you want to check the result, but
         #! this will REDUCE PERFORMANCE !
         # print("Time {:.3f}: Sick = {}, Health = {}".format(
-        #    pop_all.time, pop_all.total_sick, pop_all.total_health))
+        #   pop_all.time, pop_all.total_sick, pop_all.total_health))
 
     # plot contamination history and save it to disk
     pop_all.plot_history(
@@ -74,34 +68,22 @@ def question3_1():
 
 
 def question3_2():
-    number_of_mask = 0
+    number_of_mask = 1000
     mask = np.zeros([INPUT_DATA.shape[0], 1])
     mask[:number_of_mask] = 50
-    pop = Population(
-        INPUT_DATA[:, :2],
-        INPUT_DATA[:, 2],
-        INPUT_DATA[:, 3:5],
-        INPUT_DATA[:, 5],
-        mask=mask)
+    pop = Population(INPUT_DATA[:, :2], INPUT_DATA[:, 2],
+                     INPUT_DATA[:, 3:5], INPUT_DATA[:, 5],
+                     mask=mask)
     bound_square = Boundary([[-1, -1], [-1, 1], [1, -1], [1, 1]])
 
     for _ in range(STEPS):
         pop.X = update_position(pop.X, pop.V, TIME_STEP)
         pop.X = check_boundary(pop.X, bound_square)
         pop.distance = get_distance(pop.X, )
+        
         pop.contact = get_contact(pop.distance, pop.R_sum)
-
-        #print(pop.contact)
-        tmp = np.sum(pop.contact, axis=1) - 1  # remove self contact
-        tmp = np.reshape(tmp, (-1, 1))
-        #print(tmp.shape, pop.mask.shape)
-        flag = pop.mask - tmp <= 0  # dont have mask
-        # print(flag[flag==1])
-        flag = np.tile(flag, pop.NP)
-        pop.contact[~flag] = 0
-        np.fill_diagonal(pop.contact,
-                         1)  # ensure everyone keeps his health state
-
+        pop.contact, pop.mask = check_mask(pop.contact, pop.mask)
+        
         pop.state = get_contamination(pop.contact, pop.state)
         pop.time = _ * TIME_STEP
         pop.update_statistic()
@@ -109,7 +91,7 @@ def question3_2():
         #! Uncomment the following 2 lines if you want to check the result, but
         #! this will REDUCE PERFORMANCE !
         # print("Time {:.3f}: Sick = {}, Health = {}".format(
-        #      pop.time, pop.total_sick, pop.total_health))
+        #    pop.time, pop.total_sick, pop.total_health))
 
     # show contamination history and save it to disk
     pop.plot_history(
@@ -122,23 +104,27 @@ def question3_2():
     return pop
 
 
+
+#!------------------------------------------------------------------------------
+#!                                     TESTING
+#!------------------------------------------------------------------------------
 if __name__ == "__main__":
     print("----- Welcome to team DEFRUA -----")
 
     ## Question 3.1
     print("Microscopic simulation processing without masks ...")
     TIK = time.time()
-    #question3_1()
+    question3_1()
     TOK = time.time()
     print("Microscopic simulation finised in: {}s".format(TOK - TIK))
 
     ## Question 3.2
     print("\nMicroscopic simulation processing with masks ...")
     TIK = time.time()
-    #question3_2()
+    question3_2()
     TOK = time.time()
     print("Microscopic simulation finised in: {}s".format(TOK - TIK))
-
+    
     ## Compare the effect of mask
     datafile_list = ("with_mask_0.json", "with_mask_500.json",
                      "with_mask_1000.json", "with_mask_1500.json")

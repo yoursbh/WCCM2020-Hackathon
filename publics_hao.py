@@ -11,6 +11,7 @@ from copy import deepcopy
 from scipy.spatial import distance
 
 
+
 #!------------------------------------------------------------------------------
 #!                                     CLASSES
 #!------------------------------------------------------------------------------
@@ -186,7 +187,17 @@ def check_boundary(pos, bound):
 
 
 def check_mask(contact, mask):
-    pass
+    NP = mask.shape[0]
+    tmp = np.sum(contact, axis=1) - 1  # remove self contact
+    tmp = np.reshape(tmp, (-1, 1))
+    #print(tmp.shape, mask.shape)
+    remain = mask - tmp
+    flag = remain <= 0  # dont have mask or have broken mask
+    # print(flag[flag==1])
+    flag = np.tile(flag, NP)
+    contact[~flag] = 0
+    np.fill_diagonal(contact, 1)  # ensure everyone keeps his health state
+    return contact, remain
 
 
 def plot_with_without_mask(filelist, show=False, save=True, **kwargs):
@@ -208,15 +219,12 @@ def plot_with_without_mask(filelist, show=False, save=True, **kwargs):
         print("[OK] figure '{}' saved to disk !".format(filename))
 
 
+
 #!------------------------------------------------------------------------------
 #!                                     TESTING
 #!------------------------------------------------------------------------------
 def main():
-    b = Boundary([[-1, -1], [-1, 1], [1, -1], [1, 1]])
-    print(b.x_min, b.x_max, b.y_min, b.y_max)
-
-
-#  --- Test population
+    pass
 
 if __name__ == '__main__':
     main()
